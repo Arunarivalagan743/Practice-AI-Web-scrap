@@ -1,0 +1,14 @@
+{
+    "client": {
+        "clientId": "weebscrap",
+        "clientVersion": "1.0"
+    },
+    "threatInfo": {
+        "threatTypes": ["MALWARE", "SOCIAL_ENGINEERING", "UNWANTED_SOFTWARE"],
+        "platformTypes": ["ANY_PLATFORM"],
+        "threatEntryTypes": ["URL"],
+        "threatEntries": [
+            {"url": "http://malware.testing.google.test/testing/malware/"}
+        ]
+    }
+}
