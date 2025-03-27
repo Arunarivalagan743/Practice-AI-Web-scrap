@@ -1,17 +1,15 @@
-from fastapi import FastAPI
-from search import search_news
+from fastapi import FastAPI, Query
+from search_news import search_similar_articles
 
 app = FastAPI()
 
-@app.get("/")
-def home():
-    return {"message": "Welcome to the News Search API. Use /search?query=your_query"}
-
 @app.get("/search")
-def search_news_api(query: str):
-    results = search_news(query)
-    return {"query": query, "results": results}
+def search_news(query: str = Query(..., description="Enter your news query")):
+    results = search_similar_articles(query)
+    if not results:
+        return {"message": "No relevant news articles found."}
+    return {"articles": results}
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="127.0.0.1", port=8000, reload=True)

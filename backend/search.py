@@ -1,30 +1,40 @@
 from sentence_transformers import SentenceTransformer
 import faiss
-import json
 import numpy as np
+from pymongo import MongoClient
+import os
 
-NEWS_FILE = "data/news.json"
-FAISS_INDEX = "data/news_index.faiss"
-
-# Load model
+# Load Sentence Transformer model
 model = SentenceTransformer('all-MiniLM-L6-v2')
 
-def search_news(query, threshold=0.8):
-    # Load FAISS index and news data
+# MongoDB connection
+client = MongoClient("mongodb://localhost:27017/")
+db = client["news_db"]
+collection = db["political_news"]
+
+FAISS_INDEX = "data/news_index.faiss"
+
+def search_similar_articles(query, top_k=5):
+    if not os.path.exists(FAISS_INDEX):
+        print("❌ FAISS index not found.")
+        return []
+
     index = faiss.read_index(FAISS_INDEX)
-    with open(NEWS_FILE, "r") as f:
-        news_articles = json.load(f)
-
-    # Convert query to vector
     query_vector = model.encode([query])
+    
+    distances, indices = index.search(np.array(query_vector), top_k)
+    
+    results = []
+    for i in indices[0]:
+        article = collection.find_one({}, {"_id": 0, "title": 1, "link": 1, "description": 1})
+        if article:
+            results.append(article)
 
-    # Search FAISS for similar articles
-    D, I = index.search(np.array(query_vector), k=len(news_articles))
+    return results
 
-    # Filter results
-    relevant_articles = []
-    for i, score in zip(I[0], D[0]):
-        if i != -1 and score < threshold:  # Lower distance = better match
-            relevant_articles.append(news_articles[i])
-
-    return relevant_articles
+if __name__ == "__main__":
+    query = "US elections latest update"
+    similar_articles = search_similar_articles(query)
+    
+    for article in similar_articles:
+        print(f"🔹 {article['title']} - {article['link']}")
